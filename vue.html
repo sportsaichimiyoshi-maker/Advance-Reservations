@@ -1,0 +1,560 @@
+<!-- ListView -->
+<template id="list-view">
+  <div>
+    <h2 class="text-xl font-bold mb-4">予約一覧</h2>
+    <table class="min-w-full bg-white">
+      <thead>
+        <tr>
+          <!-- 表示項目例：利用日、施設名、コート等、開始時間、終了時間、利用者区分、利用内容・目的、所属 -->
+          <th class="py-2">利用日</th>
+          <th class="py-2">施設名</th>
+          <th class="py-2">コート等</th>
+          <th class="py-2">開始時間</th>
+          <th class="py-2">終了時間</th>
+          <th class="py-2">利用者区分</th>
+          <th class="py-2">利用内容・目的</th>
+          <th class="py-2">所属</th>
+          <th class="py-2">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="reservation in reservations" :key="reservation.rowNumber" class="text-center border-t">
+          <td class="py-2">{{ reservation['利用日'] }}</td>
+          <td class="py-2">{{ reservation['利用施設名'] }}</td>
+          <td class="py-2">{{ formatCourts(reservation["コート等"]) }}</td>
+          <td class="py-2">{{ reservation['開始時間'] }}</td>
+          <td class="py-2">{{ reservation['終了時間'] }}</td>
+          <td class="py-2">{{ reservation['利用者区分'] }}</td>
+          <td class="py-2">{{ reservation['利用内容・目的'] }}</td>
+          <td class="py-2">{{ reservation['所属'] }}</td>
+          <td class="py-2">
+            <button @click="deleteReservation(reservation.rowNumber)" class="bg-red-500 text-white px-2 py-1 rounded">
+削除
+</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</template>
+
+<!-- Register -->
+<template id="register-view">
+  <div>
+    <h2 class="text-2xl font-bold mb-4">新規予約登録</h2>
+    <!-- 予約ヘッダー情報（省スペース） -->
+    <div class="bg-white p-4 shadow rounded mb-4">
+      <h3 class="text-lg font-semibold mb-3">予約ヘッダー情報</h3>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+        <div class="bg-gray-200 text-center">
+          所属等
+        </div>
+        <div class="md:col-span-3">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="block mb-1 text-sm">所管課(団体)名</label>
+              <input type="text" v-model="header['所管課(団体)名']" class="border p-1 rounded w-full" required>
+            </div>
+            <div>
+              <label class="block mb-1 text-sm">担当者名</label>
+              <input type="text" v-model="header['担当者名']" class="border p-1 rounded w-full" required>
+            </div>
+          </div>
+        </div>
+        <div class="bg-gray-200 text-center">
+          利用団体
+        </div>
+        <div class="md:col-span-3">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <label class="block mb-1 text-sm">利用団体名</label>
+              <input type="text" v-model="header['利用団体名']" class="border p-1 rounded w-full" required>
+            </div>
+            <div>
+              <label class="block mb-1 text-sm">利用者ID</label>
+              <input type="text" v-model="header['利用者ID']" class="border p-1 rounded w-full" required>
+            </div>
+            <div>
+              <label class="block mb-1 text-sm">利用担当者</label>
+              <input type="text" v-model="header['利用担当者']" class="border p-1 rounded w-full" required>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="mb-2">
+          <label class="block mb-1 text-sm">備考</label>
+          <textarea v-model="header['備考']" class="border p-1 rounded w-full"></textarea>
+      </div>
+    </div>
+    <!-- 予約明細情報 -->
+    <div>
+      <h3 class="text-lg font-semibold mb-3">予約明細情報</h3>
+      <div v-for="(detail, index) in details" :key="index" class="bg-white p-4 shadow rounded mb-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+          <div class="bg-gray-200 pl-3 py-2">
+            所属等
+          </div>
+          <div class="flex items-center mb-3 space-x-1 md:col-span-3">
+            <!-- 小さめの追加・削除ボタン -->
+            <button type="button"
+            @click="detail.区分 = '追加'"
+            :class="['px-2 py-1 rounded text-sm', detail.区分==='追加' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700']">
+            追加
+            </button>
+            <button type="button"
+            @click="detail.区分 = '削除'"
+            :class="['px-2 py-1 rounded text-sm', detail.区分==='削除' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700']">
+            削除
+            </button>
+            <button v-if="details.length > 1" @click="removeDetail(index)"
+            class="px-2 py-1 rounded bg-red-500 text-white text-sm">
+            ×
+            </button>
+          </div>
+          <!-- レイアウト：1行目 施設名／開始時間／終了時間 -->
+          <div class="bg-gray-200 pl-3 py-2">
+            利用施設
+          </div>
+          <div class="md:col-span-3">
+            <div class="grid grid-cols-3 gap-2 mb-2">
+              <div>
+                <label class="block text-xs">利用施設名</label>
+                <select v-model="detail.利用施設名" class="border p-1 rounded w-full" required>
+                  <option value="" disabled>選択してください</option>
+                  <option v-for="facility in facilities" :key="facility.施設名" :value="facility.施設名">
+                  {{ facility.施設名 }}
+                  </option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs">開始時間</label>
+                <select v-model="detail.開始時間" class="border p-1 rounded w-full" @change="onStartChange(detail)" required>
+                <option value="" disabled>選択してください</option>
+                <option v-for="t in getStartTimeOptions(detail)" :key="t" :value="t">
+                {{ t }}
+                </option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs">終了時間</label>
+                <select v-model="detail.終了時間" class="border p-1 rounded w-full" required>
+                <option value="" disabled>選択してください</option>
+                <option v-for="t in getEndTimeOptions(detail)" :key="t" :value="t">
+                {{ t }}
+                </option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="bg-gray-200 pl-3 py-2">
+            利用施設
+          </div>
+          <div class="md:col-span-3">
+            <!-- 施設名選択後、コート等の選択肢がある場合はその下に配置 -->
+            <div v-if="getCourts(detail.利用施設名)" class="mb-2">
+              <label class="block text-xs">コート等</label>
+              <div class="flex flex-wrap gap-2">
+                <label v-for="court in getCourts(detail.利用施設名)" :key="court" class="flex items-center gap-1">
+                <input type="checkbox" :value="court" v-model="detail['コート等']">
+                <span class="text-xs">{{ court }}</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="bg-gray-200 pl-3 py-2">
+            利用施設
+          </div>
+          <div class="md:col-span-3">
+            <!-- 2行目：利用日／利用者区分 -->
+            <div class="grid grid-cols-2 gap-2 mb-2">
+              <div>
+                <label class="block text-xs">利用日</label>
+                <input type="date" v-model="detail.利用日" class="border p-1 rounded w-full" required>
+              </div>
+              <div>
+                <label class="block text-xs">利用者区分</label>
+                <select v-model="detail.利用者区分" class="border p-1 rounded w-full" required>
+                <option value="" disabled>選択してください</option>
+                <option value="大人">大人</option>
+                <option value="こども">こども</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="bg-gray-200 pl-3 py-2">
+            利用施設
+          </div>
+          <div class="md:col-span-3">
+            <!-- 3行目：利用内容・目的 or 変更理由（横いっぱい） -->
+            <div class="mb-2">
+              <label class="block text-xs">
+              {{ detail.区分==='追加' ? '利用内容・目的' : '変更理由' }}
+              </label>
+              <textarea v-if="detail.区分==='追加'" v-model="detail['利用内容・目的']" class="border p-1 rounded w-full" required></textarea>
+              <textarea v-else v-model="detail['変更理由']" class="border p-1 rounded w-full" required></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="mb-4">
+        <button @click="addDetail" class="bg-green-500 text-white px-3 py-1 rounded text-sm">
+＋ 明細を追加
+</button>
+      </div>
+    </div>
+    <!-- 登録ボタンを右側に配置 -->
+    <div class="flex justify-end">
+      <button @click="submitReservation" class="bg-blue-500 text-white px-4 py-2 rounded text-lg">
+登録
+</button>
+    </div>
+  </div>
+</template>
+
+<!-- CalendarView -->
+<template id="calendar-view">
+  <div>
+    <h2 class="text-xl font-bold mb-4">予約カレンダー</h2>
+    <div class="mb-4">
+      <label class="mr-2 font-semibold">施設フィルター: </label>
+      <select v-model="selectedFacility" class="border p-2 rounded">
+<option value="">すべての施設</option>
+<option v-for="facility in facilities" :key="facility.施設名" :value="facility.施設名">
+{{ facility.施設名 }}
+</option>
+</select>
+    </div>
+    <!-- FullCalendar を配置するコンテナ -->
+    <div id="calendar"></div>
+  </div>
+</template>
+
+<script>
+  const { ref, onMounted, onBeforeUnmount, defineComponent, watch } = Vue;
+
+// ListView コンポーネント（新シート構成に対応：明細シートのデータ＋ヘッダー「所属」）
+const ListView = defineComponent({
+name: "ListView",
+template: "#list-view",
+setup() {
+  const formatCourts = courts => {
+    return Array.isArray(courts) ? courts.join(", ") : courts;
+  };
+const reservations = ref([]);
+const loadReservations = () => {
+google.script.run.withSuccessHandler(function(data) {
+reservations.value = data || [];
+}).getReservations();
+};
+const deleteReservation = (rowNumber) => {
+if (confirm("本当に削除してもよろしいですか？")) {
+google.script.run.withSuccessHandler(function(){
+alert("削除が完了しました");
+loadReservations();
+}).deleteReservation(rowNumber);
+}
+};
+onMounted(loadReservations);
+return { formatCourts, reservations, deleteReservation };
+}
+});
+
+// Register コンポーネント　（ヘッダー情報と複数明細の入力フォーム）
+const Register = defineComponent({
+name: "Register",
+template: "#register-view",
+setup() {
+// ヘッダー情報
+const header = ref({
+"所管課(団体)名": "",
+"担当者名": "",
+"利用団体名": "",
+"利用者ID": "",
+"利用担当者": "",
+"備考": ""
+});
+// 明細情報。初期状態は1件分の入力フォームを用意。
+const details = ref([{
+区分: "追加",
+利用日: "",
+利用施設名: "",
+"コート等": [],
+開始時間: "",
+終了時間: "",
+利用者区分: "",
+"利用内容・目的": "",
+"変更理由": ""
+}]);
+// 施設一覧を取得
+const facilities = ref([]);
+const loadFacilities = () => {
+google.script.run.withSuccessHandler(function(data) {
+facilities.value = data || [];
+}).getFacilityOptions();
+};
+
+// 施設に関連した「コート等」を返すメソッド
+const getCourts = facilityName => {
+  const f = facilities.value.find(x => x.施設名 === facilityName);
+  return f ? f.コート等 : [];
+};
+
+// 施設の利用可能時間（カンマ区切り文字列）を、配列に変換
+const getTimeSlots = facilityName => {
+  const f = facilities.value.find(x => x.施設名 === facilityName);
+  if (f && f.利用時間) {
+    return f.利用時間.split(",").map(s => s.trim()).filter(s => s !== "");
+  }
+  return [];
+};
+
+// 開始時間の選択肢：利用可能な時間帯が2件以上なら最後の要素を除く
+const getStartTimeOptions = detail => {
+  if (!detail.利用施設名) return [];
+  const slots = getTimeSlots(detail.利用施設名);
+  return slots.length > 1 ? slots.slice(0, slots.length - 1) : slots;
+};
+
+// 終了時間の選択肢：選択された開始時間より後の時間
+const getEndTimeOptions = detail => {
+  if (!detail.利用施設名) return [];
+  const slots = getTimeSlots(detail.利用施設名);
+  if (!detail.開始時間) return [];
+  const startIndex = slots.indexOf(detail.開始時間);
+  return startIndex >= 0 ? slots.slice(startIndex + 1) : [];
+};
+
+// 開始時間変更時、終了時間のリセット
+const onStartChange = detail => { 
+  detail.終了時間 = ""; 
+};
+
+// 明細フォーム追加
+const addDetail = () => {
+  details.value.push({
+    区分: "追加",
+    利用日: "",
+    利用施設名: "",
+    "コート等": [],
+    開始時間: "",
+    終了時間: "",
+    利用者区分: "",
+    "利用内容・目的": "",
+    "変更理由": ""
+  });
+};
+
+// 明細フォーム削除（最低1件保持）
+const removeDetail = index => {
+  if (details.value.length > 1 && confirm("この明細を削除しますか？")) {
+    details.value.splice(index, 1);
+  }
+};
+
+// 予約情報の登録
+const submitReservation = () => {
+  // ヘッダー必須チェック
+  if (!header.value["所管課(団体)名"] || !header.value["担当者名"] ||
+      !header.value["利用団体名"] || !header.value["利用者ID"] ||
+      !header.value["利用担当者"]) {
+    alert("ヘッダー情報の必須項目を入力してください。");
+    return;
+  }
+  // 各明細必須チェック
+  for (const d of details.value) {
+    if (!d.利用日 || !d.利用施設名 || !d.開始時間 || !d.終了時間 || !d.利用者区分) {
+      alert("明細情報の必須項目を入力してください。");
+      return;
+    }
+    if (d.区分 === "追加" && !d["利用内容・目的"]) {
+      alert("追加の場合、利用内容・目的は必須です。");
+      return;
+    }
+    if (d.区分 === "削除" && !d["変更理由"]) {
+      alert("削除の場合、変更理由は必須です。");
+      return;
+    }
+  }
+  const payload = {
+    header: header.value,
+    details: details.value
+  };
+  google.script.run.withSuccessHandler(function(response){
+    if (response.status === 'error') {
+      alert('エラーが発生しました: ' + response.message);
+      console.error(response.details);
+      return;
+    }
+    alert("登録が完了しました！受付ID：" + response.受付ID);
+    // ヘッダー・明細初期化
+    header.value = {
+      "所管課(団体)名": "",
+      "担当者名": "",
+      "利用団体名": "",
+      "利用者ID": "",
+      "利用担当者": "",
+      "備考": ""
+    };
+    details.value = [{
+      区分: "追加",
+      利用日: "",
+      利用施設名: "",
+      "コート等": [],
+      開始時間: "",
+      終了時間: "",
+      利用者区分: "",
+      "利用内容・目的": "",
+      "変更理由": ""
+    }];
+  }).withFailureHandler(function(error) {
+    alert('サーバーとの通信中にエラーが発生しました: ' + error.message);
+    console.error(error);
+  }).addReservation(JSON.stringify(payload));
+};
+
+onMounted(loadFacilities);
+return { 
+  header, 
+  details, 
+  facilities, 
+  getCourts, 
+  getStartTimeOptions, 
+  getEndTimeOptions, 
+  onStartChange, 
+  addDetail, 
+  removeDetail, 
+  submitReservation 
+};
+}
+});
+
+
+
+
+/*------------------------ Calendar View -------------------------------*/
+
+
+
+const CalendarView = defineComponent({
+name: "CalendarView",
+template: "#calendar-view",
+setup() {
+const calendar = ref(null);
+const selectedFacility = ref("");
+const reservations = ref([]);
+const facilities = ref([]);
+
+const loadReservations = () => {
+  google.script.run.withSuccessHandler(function(data) {
+    reservations.value = data || [];
+    renderCalendar();
+  }).getReservations();
+};
+const loadFacilities = () => {
+  google.script.run.withSuccessHandler(function(data) {
+    facilities.value = data || [];
+  }).getFacilityOptions();
+};
+
+const renderCalendar = () => {
+  const el = document.getElementById('calendar');
+  if (calendar.value) calendar.value.destroy();
+
+  const fc = window.FullCalendar;
+  if (!fc) {
+    console.error("FullCalendar is not loaded");
+    return;
+  }
+  // 施設フィルターを反映しながら各予約情報をイベントへ変換
+  const events = (reservations.value || [])
+    .filter(r => !selectedFacility.value || r["利用施設名"] === selectedFacility.value)
+    .map(r => {
+      let title = r["利用施設名"];
+      if (r["コート等"]) {
+        title += `【${r["コート等"]}】`;
+      }
+      return {
+        title: title,
+        start: `${r['利用日']}T${r['開始時間']}`,
+        end: `${r['利用日']}T${r['終了時間']}`
+      };
+    });
+
+  calendar.value = new fc.Calendar(el, {
+    initialView: 'dayGridMonth',
+    locale: 'ja',
+    firstDay: 1,
+    height: 'auto',
+    headerToolbar: {
+      left: 'title',
+      center: '',
+      right: 'prev,next today'
+    },
+    titleFormat: { year: 'numeric', month: 'long' },
+    displayEventTime: false,
+    eventColor: '#E0F7FA',
+    dayCellDidMount: function(info) {
+      // 全てのセルの背景色を明るい色（ここでは白）に統一
+      info.el.style.backgroundColor = '#ffffff';
+
+      // セル内の日付（数字）のフォントカラー設定
+      const dayNumberEl = info.el.querySelector('.fc-daygrid-day-number');
+      if (dayNumberEl) {
+        const day = info.date.getDay();
+        if (day === 6) { // 土曜
+          dayNumberEl.style.color = 'blue';
+        } else if (day === 0) { // 日曜
+          dayNumberEl.style.color = 'red';
+        }
+        // 左上寄せに近づける
+        dayNumberEl.style.textAlign = 'left';
+        dayNumberEl.style.padding = '2px 4px';
+      }
+    },
+    eventContent: function(arg) {
+      const fmt = d =>
+        d ? String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') : '';
+      const start = arg.event.start,
+            end   = arg.event.end;
+      const timeLine = (start && end) ? `${fmt(start)}-${fmt(end)}` : '';
+      const html = `<div style="white-space: normal;">${timeLine}<br>${arg.event.title}</div>`;
+      return { html: html };
+    },
+    events: events
+  });
+  calendar.value.render();
+};
+
+onMounted(() => {
+  loadReservations();
+  loadFacilities();
+});
+onBeforeUnmount(() => {
+  if (calendar.value && typeof calendar.value.destroy === 'function') {
+    calendar.value.destroy();
+  }
+});
+watch(selectedFacility, renderCalendar);
+
+return { selectedFacility, reservations, facilities };
+}
+});
+
+
+
+// メインアプリ
+const app = Vue.createApp({
+data() { return { currentView: 'ListView' }; },
+computed: {
+currentViewComponent() {
+return this.currentView;
+}
+},
+methods: {
+changeView(view) { this.currentView = view; }
+},
+components: { ListView, Register, CalendarView }
+});
+
+app.mount('#app');
+</script>
