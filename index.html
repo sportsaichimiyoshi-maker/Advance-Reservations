@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>施設予約管理アプリ</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+<!-- FullCalendar のスクリプト -->
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+
+</head>
+
+<body class="bg-gray-100">
+<div id="app" class="flex h-screen">
+<nav class="w-1/4 bg-white p-4 shadow-md">
+<ul>
+<li class="mb-4">
+<button @click="changeView('ListView')" class="w-full text-left p-2 hover:bg-gray-200 rounded">
+予約一覧
+</button>
+</li>
+<li class="mb-4">
+<button @click="changeView('Register')" class="w-full text-left p-2 hover:bg-gray-200 rounded">
+新規登録
+</button>
+</li>
+<li>
+<button @click="changeView('CalendarView')" class="w-full text-left p-2 hover:bg-gray-200 rounded">
+カレンダー
+</button>
+</li>
+</ul>
+</nav>
+<main class="flex-1 p-4 overflow-auto">
+<component :is="currentViewComponent"></component>
+</main>
+</div>
+<?!= include('vue') ?>
+</body>
+</html>
