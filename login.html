@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<title>施設予約システム ログイン</title>
+<style>
+body { font-family: sans-serif; margin: 20px; }
+.container { max-width: 400px; margin: 0 auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+input { width: 95%; padding: 8px; margin-bottom: 10px; }
+button { padding: 10px 15px; margin-right: 10px; cursor: pointer; }
+#error-message, #server-response { color: red; margin-top: 10px; }
+#user-contents { display: none; } /* 初期状態では非表示 */
+.signup-item { display: none; } /* 初期状態では非表示 */
+</style>
+</head>
+<body>
+
+<div class="container">
+<h1>施設予約システム</h1>
+
+<!-- ログインフォームエリア -->
+<div id="login-form">
+  <h2>ログイン</h2>
+  <input type="email" id="email" placeholder="メールアドレス">
+  <!-- ↓ ユーザー名入力欄を追加 ↓ -->
+  <input type="text" id="username" class="signup-item" placeholder="ユーザー名（新規登録時のみ）">
+  <input type="password" id="password" placeholder="パスワード">    
+  <!-- ↓ ボタンの構成を変更 ↓ -->
+  <button id="login-button">ログイン</button>
+  <button id="show-signup-button">新規登録はこちら</button>
+  <button id="signup-button" class="signup-item">登録実行</button>
+  <p id="error-message"></p>
+</div>
+
+<!-- ログイン後コンテンツエリア -->
+<div id="user-contents">
+  <h2>ようこそ！</h2>
+  <p><span id="user-name"></span> さん、ようこそ！</p>
+  <button id="get-data-button">保護された情報を取得</button>
+  <button id="logout-button">ログアウト</button>
+  <p id="server-response"></p>    </div>
+</div>
+
+<!-- Firebase SDK の読み込み -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+<?!= include('authf') ?>
+
+</body>
+</html>
